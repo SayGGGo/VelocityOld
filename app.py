@@ -482,7 +482,6 @@ def add_header(response):
         response.cache_control.max_age = 31536000
         response.cache_control.public = True
         response.cache_control.no_transform = True
-        response.headers['Cache-Control'] += ', no-transform'
     return response
 @app.context_processor
 
