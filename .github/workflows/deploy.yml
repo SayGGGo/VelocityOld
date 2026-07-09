@@ -9,10 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout | ЦТК.SPACE
-        uses: actions/checkout@v4
-
-      - name: Print CTK.Space Logo
+      - name: ⁛ Start | ЦТК.SPACE
         run: |
           echo ""
           echo "██████╗████████╗██╗  ██╗       ███████╗██████╗  █████╗  ██████╗███████╗"
@@ -24,8 +21,9 @@ jobs:
           echo ""
           echo "                              by saydef.                                "
           echo ""
-
-      - name: Deploy | ЦТК.SPACE
+      - name: ⁘ Checkout | ЦТК.SPACE
+        uses: actions/checkout@v4
+      - name: ⁙ Deploy | ЦТК.SPACE
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -37,3 +35,16 @@ jobs:
             git pull origin main
             pkill -f "python app.py" || true
             nohup python app.py > app.log 2>&1 &
+
+      - name: ※ Successful | ЦТК.SPACE
+        run: |
+          echo ""
+          echo "██████╗████████╗██╗  ██╗       ███████╗██████╗  █████╗  ██████╗███████╗"
+          echo "██╔════╝╚══██╔══╝██║ ██╔╝      ██╔════╝██╔══██╗██╔══██╗██╔════╝██╔════╝"
+          echo "██║        ██║   █████╔╝       ███████╗██████╔╝███████║██║     █████╗"
+          echo "██║        ██║   ██╔═██╗       ╚════██║██╔═══╝ ██╔══██║██║     ██╔══╝"
+          echo "╚██████╗   ██║   ██║  ██╗      ███████║██║     ██║  ██║╚██████╗███████╗"
+          echo " ╚═════╝   ╚═╝   ╚═╝  ╚═╝      ╚══════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝"
+          echo ""
+          echo "                              successful.                              "
+          echo ""
