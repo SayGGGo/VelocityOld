@@ -34,8 +34,8 @@ jobs:
             cd /root/velocity
             git pull origin main
             pkill -f "python app.py" || true
-            if ! command -v screen &> /dev/null; then apt-get update && apt-get install -y screen; fi
-            screen -dmS velocity_app python app.py
+            nohup python app.py > app.log 2>&1 &
+            disown
 
       - name: ※ Successful | ЦТК.SPACE
         run: |
