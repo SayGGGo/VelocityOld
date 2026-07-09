@@ -258,34 +258,10 @@ def build_obfuscated():
                 js_code += f"\n(function(){{const s=document.createElement('style');s.innerHTML=`{escaped_css}`;document.head.appendChild(s);}})();\n"
             
             import subprocess
-            temp_in = f"temp_in_{js_file}"
-            temp_out = f"temp_out_{js_file}"
-            with open(temp_in, "w", encoding="utf-8") as f_temp:
-                f_temp.write(js_code)
-            try:
-                cmd = ["npx.cmd", "-y", "javascript-obfuscator", temp_in, "--output", temp_out, "--compact", "true", "--self-defending", "true", "--control-flow-flattening", "true", "--string-array", "true", "--string-array-threshold", "0.75"]
-                subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
-                if os.path.exists(temp_out):
-                    with open(temp_out, "r", encoding="utf-8") as f_temp:
-                        obfuscated_js = f_temp.read()
-                else:
-                    raise Exception("Output file not found")
-            except Exception as e:
-                print("javascript-obfuscator failed, using XOR fallback:", e)
-                key = random.randint(10, 250)
-                encoded = [(ord(c) ^ key) for c in js_code]
-                chars = string.ascii_lowercase
-                var_array = "a" + "".join(random.choices(chars, k=6))
-                var_key = "k" + "".join(random.choices(chars, k=6))
-                var_str = "s" + "".join(random.choices(chars, k=6))
-                var_func = "f" + "".join(random.choices(chars, k=6))
-                obfuscated_js = f"(function(){{var {var_array}={encoded};var {var_key}={key};var {var_str}='';for(var i=0;i<{var_array}.length;i++){{{var_str}+=String.fromCodePoint({var_array}[i]^{var_key});}}var {var_func}=new Function({var_str});{var_func}();}})();"
-            finally:
-                if os.path.exists(temp_in): os.remove(temp_in)
-                if os.path.exists(temp_out): os.remove(temp_out)
             
+            # Write js_code directly without obfuscation to avoid CloudFlare Auto Minify crash and speed up build
             with open(dest_js, 'w', encoding='utf-8') as f:
-                f.write(obfuscated_js)
+                f.write(js_code)
     for filepath in html_files:
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
