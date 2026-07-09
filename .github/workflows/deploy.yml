@@ -34,7 +34,7 @@ jobs:
             cd /root/velocity
             git pull origin main
             pkill -f "python app.py" || true
-            nohup python app.py > app.log 2>&1 &
+            nohup python app.py > app.log 2>&1 </dev/null &
 
       - name: ※ Successful | ЦТК.SPACE
         run: |
