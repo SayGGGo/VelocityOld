@@ -1,4 +1,4 @@
-name: Deploy Website
+name: ※ Deploy | ЦТК.SPACE
 
 on:
   push:
@@ -40,7 +40,11 @@ jobs:
             cd /root/velocity || exit
             git fetch --all
             git reset --hard origin/main
+            if [ ! -d "venv" ]; then
+              python3 -m venv venv || (sudo apt-get update && sudo apt-get install -y python3-venv && python3 -m venv venv)
+            fi
             ./venv/bin/pip install -r requirements.txt
+
             
             SERVICE_FILE="/etc/systemd/system/velocity.service"
             cat << EOF | sudo tee $SERVICE_FILE
