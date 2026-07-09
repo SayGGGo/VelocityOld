@@ -548,7 +548,7 @@ def inject_security():
             document.head.appendChild(style);
         } 
         """
-        raw_js = raw_js.replace("[ALLOW_LIST_PLACEHOLDER]", f"[{js_allowed_array}]")
+        raw_js = raw_js.replace("[ALLOW_LIST_PLACEHOLDER]", f"[{js_allowed_array}]").replace("{css_content}", css_content)
         key = random.randint(10, 250)
         encoded = [(ord(c) ^ key) for c in raw_js]
         var_array = "a" + "".join(random.choices(string.ascii_letters, k=6))
