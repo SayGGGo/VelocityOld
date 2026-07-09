@@ -552,7 +552,7 @@ def inject_security():
             document.addEventListener("DOMContentLoaded", () => { 
                 const w = document.createElement('div');
                 w.style = "position:fixed;top:0;left:0;width:100%;height:100vh;background:#220000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;font-size:20px;font-weight:400;letter-spacing:1px;text-align:center;padding:20px;";
-                w.innerHTML = "<div style='font-size:60px;margin-bottom:20px;'>⚠️</div><div style='color:#fff;margin-bottom:10px;'>ВНИМАНИЕ</div><div style='font-size:14px;font-weight:400;max-width:600px;color:#ccc;'>Вы находитесь на неофициальном зеркале: <b>" + h + "</b>.</div><div style='margin-top:20px;font-size:12px;color:#888;'>Будьте осторожны.</div><button onclick='this.parentElement.remove(); document.body.style.overflow=\"auto\";' style='margin-top:20px;background:#fff;color:#000;border:none;padding:10px 20px;border-radius:20px;cursor:pointer;font-weight:bold;'>ПРОДОЛЖИТЬ</button>";
+                w.innerHTML = "<div style='font-size:60px;margin-bottom:20px;'>⚠️</div><div style='color:#fff;margin-bottom:10px;'>ВНИМАНИЕ</div><div style='font-size:14px;font-weight:400;max-width:600px;color:#ccc;'>Вы находитесь на неофициальном зеркале: <b>" + h + "</b>.</div><div style='margin-top:20px;font-size:12px;color:#888;'>Будьте осторожны.</div><button onclick='this.parentElement.remove(); document.body.style.overflow=&quot;auto&quot;;' style='margin-top:20px;background:#fff;color:#000;border:none;padding:10px 20px;border-radius:20px;cursor:pointer;font-weight:bold;'>ПРОДОЛЖИТЬ</button>";
                 document.body.appendChild(w);
                 document.body.style.overflow = "hidden";
             } );
