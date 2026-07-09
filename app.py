@@ -494,13 +494,35 @@ with app.app_context():
         start_defpay_poller(app)
                                                                                 
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000
-@app.after_request
+import gzip
+import io
 
+@app.after_request
 def add_header(response):
-                                                      
     if 'static/' in request.path:
         response.cache_control.max_age = 31536000
         response.cache_control.public = True
+        return response
+
+    accept_encoding = request.headers.get('Accept-Encoding', '')
+    if 'gzip' not in accept_encoding.lower():
+        return response
+
+    if response.status_code < 200 or response.status_code >= 300:
+        return response
+        
+    if response.mimetype not in ['text/html', 'application/json', 'text/css', 'application/javascript', 'text/javascript']:
+        return response
+
+    response.direct_passthrough = False
+    gzip_buffer = io.BytesIO()
+    with gzip.GzipFile(mode='wb', fileobj=gzip_buffer) as gzip_file:
+        gzip_file.write(response.get_data())
+    
+    response.set_data(gzip_buffer.getvalue())
+    response.headers['Content-Encoding'] = 'gzip'
+    response.headers['Content-Length'] = len(response.get_data())
+    
     return response
 @app.context_processor
 
