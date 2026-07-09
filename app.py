@@ -481,7 +481,9 @@ def add_header(response):
     if 'static/' in request.path:
         response.cache_control.max_age = 31536000
         response.cache_control.public = True
-        response.cache_control.no_transform = True
+        # Применяем no-transform только к медиафайлам, чтобы CloudFlare мог кэшировать и сжимать JS/CSS
+        if any(request.path.endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.mp4', '.webm', '.woff', '.woff2']):
+            response.cache_control.no_transform = True
     return response
 @app.context_processor
 
