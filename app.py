@@ -506,11 +506,6 @@ def add_header(response):
 
 def inject_security():
     def get_anti_phishing_js():
-        css_content = ""
-        if os.path.exists('static/build/styles.css'):
-            with open('static/build/styles.css', 'r', encoding='utf-8') as f:
-                css_content = f.read().replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
-        
         allowed_env = os.environ.get('ALLOWED_DOMAINS', '')
         allowed_list = [d.strip() for d in allowed_env.split(',') if d.strip()]
         for default_domain in ['isvelocity.ru', 'isvelo.city', 'localhost', '127.0.0.1']:
@@ -535,12 +530,13 @@ def inject_security():
                 document.body.style.overflow = "hidden";
             } );
         }  else { 
-            const style = document.createElement('style');
-            style.innerHTML = `{css_content}`;
-            document.head.appendChild(style);
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = '/static/build/styles.css?v=' + new Date().getTime();
+            document.head.appendChild(link);
         } 
         """
-        raw_js = raw_js.replace("[ALLOW_LIST_PLACEHOLDER]", f"[{js_allowed_array}]").replace("{css_content}", css_content)
+        raw_js = raw_js.replace("[ALLOW_LIST_PLACEHOLDER]", f"[{js_allowed_array}]")
         
         import base64
         key = random.randint(10, 250)
