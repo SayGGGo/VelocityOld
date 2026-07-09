@@ -258,6 +258,8 @@ def build_obfuscated():
                 js_code += f"\n(function(){{const s=document.createElement('style');s.innerHTML=`{escaped_css}`;document.head.appendChild(s);}})();\n"
             
             import subprocess
+            import time
+            v = int(time.time())
             
             # Write js_code directly without obfuscation to avoid CloudFlare Auto Minify crash and speed up build
             with open(dest_js, 'w', encoding='utf-8') as f:
@@ -265,10 +267,12 @@ def build_obfuscated():
     for filepath in html_files:
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
-        content = content.replace("filename='js/velocity-ui.js'", "filename='build/js/velocity-ui.js'")
-        content = content.replace('filename="js/velocity-ui.js"', 'filename="build/js/velocity-ui.js"')
-        content = content.replace("filename='js/bg.js'", "filename='build/js/bg.js'")
-        content = content.replace('filename="js/bg.js"', 'filename="build/js/bg.js"')
+        import time
+        v = int(time.time())
+        content = content.replace("filename='js/bg.js'", f"filename='build/js/bg.js', v={v}")
+        content = content.replace('filename="js/bg.js"', f'filename="build/js/bg.js", v={v}')
+        content = content.replace("filename='js/velocity-ui.js'", f"filename='build/js/velocity-ui.js', v={v}")
+        content = content.replace('filename="js/velocity-ui.js"', f'filename="build/js/velocity-ui.js", v={v}')
                                                                                                 
         script_blocks = []
         def script_stripper(match):
