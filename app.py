@@ -320,7 +320,7 @@ def build_obfuscated():
         for idx, block in enumerate(script_blocks):
             new_content = new_content.replace(f"<!--SCRIPT_BLOCK_{idx}-->", block)
                                                                   
-        new_content = re.sub(r'<link[^>]*href=["\'][^"\']*styles\.css["\'][^>]*>', '', new_content)
+        new_content = re.sub(r'<link\b[^>]*?href=[^>]*?styles\.css[^>]*?>', '', new_content)
                                                                             
         for ext_url, local_path in url_mapping.items():
             new_content = new_content.replace(ext_url, local_path)
