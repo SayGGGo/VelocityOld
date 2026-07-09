@@ -526,18 +526,14 @@ def inject_security():
         else if (h === 'isvelo.city') window.mirrorName = "ГЛОБАЛЬНАЯ ВЕРСИЯ";
         else if (h === 'localhost' || h === '127.0.0.1') window.mirrorName = "ЛОКАЛЬНЫЙ СЕРВЕР";
         if (!a.includes(h)) { 
-            if (window.location.protocol === 'file:') { 
-                document.addEventListener("DOMContentLoaded", () => { 
-                    const w = document.createElement('div');
-                    w.style = "position:fixed;top:0;left:0;width:100%;height:100vh;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;font-size:24px;font-weight:900;letter-spacing:2px;text-align:center;padding:20px;";
-                    w.innerHTML = "<div style='font-size:100px;margin-bottom:20px;'>🤡</div><div style='color:#dc2626;margin-bottom:10px;'>ХА-ХА-ХА! ПОПАЛСЯ, ПИРАТ! 🏴‍☠️</div><div style='font-size:14px;font-weight:400;max-width:600px;color:#aaa;'>Ты правда думал, что сможешь просто скопировать этот шикарный код и оно будет работать? Иди учи JavaScript, мамкин хакер.</div><div style='margin-top:40px;font-size:12px;color:#666;'>ОФИЦИАЛЬНЫЕ САЙТЫ:<br><a href='https://isvelocity.ru' style='color:#00a2ff;text-decoration:none;margin-top:10px;display:block;'>ISVELOCITY.RU</a><a href='https://isvelo.city' style='color:#00a2ff;text-decoration:none;margin-top:5px;display:block;'>ISVELO.CITY</a></div>";
-                    document.body.innerHTML = "";
-                    document.body.appendChild(w);
-                    document.body.style.overflow = "hidden";
-                } );
-            }  else if (!['localhost', '127.0.0.1'].includes(h)) { 
-                window.location.replace("https://isvelocity.ru/?ref=pirate_redirect");
-            } 
+            document.addEventListener("DOMContentLoaded", () => { 
+                const w = document.createElement('div');
+                w.style = "position:fixed;top:0;left:0;width:100%;height:100vh;background:#990000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;font-size:24px;font-weight:900;letter-spacing:2px;text-align:center;padding:20px;";
+                w.innerHTML = "<div style='font-size:80px;margin-bottom:20px;'>🛑</div><div style='color:#fff;margin-bottom:10px;'>СИСТЕМА ЗАЩИТЫ VELOCITY</div><div style='font-size:16px;font-weight:400;max-width:800px;color:#eee;'>Ваш текущий домен <b>" + h + "</b> не разрешен для использования.</div><div style='margin-top:20px;font-size:14px;color:#fff;'>Пожалуйста, добавьте этот домен в переменную <b>ALLOWED_DOMAINS</b> в файле <b>.env</b>!</div>";
+                document.body.innerHTML = "";
+                document.body.appendChild(w);
+                document.body.style.overflow = "hidden";
+            } );
         }  else { 
             const style = document.createElement('style');
             style.innerHTML = `{css_content}`;
