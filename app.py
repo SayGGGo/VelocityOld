@@ -252,11 +252,7 @@ def build_obfuscated():
             with open(src_js, 'r', encoding='utf-8') as f:
                 js_code = f.read()
             
-            # If this is velocity-ui.js, embed the obfuscated CSS styles into it dynamically!
-            if js_file == 'velocity-ui.js':
-                escaped_css = css.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
-                js_code += f"\n(function(){{const s=document.createElement('style');s.innerHTML=`{escaped_css}`;document.head.appendChild(s);}})();\n"
-            
+            # We no longer embed CSS into JS
             import subprocess
             import time
             v = int(time.time())
@@ -273,6 +269,8 @@ def build_obfuscated():
         content = content.replace('filename="js/bg.js"', f'filename="build/js/bg.js", v={v}')
         content = content.replace("filename='js/velocity-ui.js'", f"filename='build/js/velocity-ui.js', v={v}")
         content = content.replace('filename="js/velocity-ui.js"', f'filename="build/js/velocity-ui.js", v={v}')
+        content = content.replace("filename='css/styles.css'", f"filename='build/styles.css', v={v}")
+        content = content.replace('filename="css/styles.css"', f'filename="build/styles.css", v={v}')
                                                                                                 
         script_blocks = []
         def script_stripper(match):
@@ -298,8 +296,7 @@ def build_obfuscated():
         for idx, block in enumerate(script_blocks):
             new_content = new_content.replace(f"<!--SCRIPT_BLOCK_{idx}-->", block)
                                                                   
-        new_content = re.sub(r'<link\b[^>]*?href=[^>]*?styles\.css[^>]*?>', '', new_content)
-                                                                            
+        # We no longer strip styles.css since we removed anti-phishing logic
         for ext_url, local_path in url_mapping.items():
             new_content = new_content.replace(ext_url, local_path)
         
@@ -489,12 +486,7 @@ def add_header(response):
 
 def inject_security():
     def get_anti_phishing_js():
-        return """
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/static/build/styles.css?v=' + new Date().getTime();
-        document.head.appendChild(link);
-        """
+        return ""
     return dict(
         anti_phishing=get_anti_phishing_js,
         YANDEX_CAPTCHA_CLIENT_KEY=os.environ.get('YANDEX_CAPTCHA_CLIENT_KEY', 'ysc1_iuWrKlKmg8h9p5oF2nxnboXBxT1ZqUoeZgXHIJgy83208734')
