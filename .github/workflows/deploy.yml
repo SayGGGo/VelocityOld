@@ -57,6 +57,7 @@ jobs:
             Group=www-data
             WorkingDirectory=/root/velocity
             Environment="PATH=/root/velocity/venv/bin"
+            Environment="PORT=80"
             ExecStart=/root/velocity/venv/bin/python3 app.py
             Restart=always
             RestartSec=5
