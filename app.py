@@ -194,22 +194,22 @@ def build_obfuscated():
         filename = f"{url_hash}{ext}"
         cache_path = os.path.join(cache_dir, filename)
         target_path = os.path.join(target_dir, filename)
-        if not os.path.exists(cache_path):
-            print(f"Загружаю внешний ресурс: {url}")
-            try:
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-                r = requests.get(url, headers=headers, timeout=10)
-                if r.status_code == 200:
-                    with open(cache_path, 'wb') as f:
-                        f.write(r.content)
-                    print(f"Успешно сохранено в кэш: {cache_path}")
-                else:
-                    print(f"Ошибка загрузки {url}: код {r.status_code}")
-            except Exception as e:
-                print(f"Не удалось скачать {url}: {e}")
-        if os.path.exists(cache_path):
-            shutil.copy(cache_path, target_path)
-            url_mapping[url] = f"/static/build/preloaded/{filename}"
+        # if not os.path.exists(cache_path):
+        #     print(f"Загружаю внешний ресурс: {url}")
+        #     try:
+        #         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        #         r = requests.get(url, headers=headers, timeout=10)
+        #         if r.status_code == 200:
+        #             with open(cache_path, 'wb') as f:
+        #                 f.write(r.content)
+        #             print(f"Успешно сохранено в кэш: {cache_path}")
+        #         else:
+        #             print(f"Ошибка загрузки {url}: код {r.status_code}")
+        #     except Exception as e:
+        #         print(f"Не удалось скачать {url}: {e}")
+        # if os.path.exists(cache_path):
+        #     shutil.copy(cache_path, target_path)
+        #     url_mapping[url] = f"/static/build/preloaded/{filename}"
     class_pattern = re.compile(r'class=(["\'])(.*?)\1')
     valid_class = re.compile(r'^[a-zA-Z_-][a-zA-Z0-9_-]*$')
     jinja_split = re.compile(r'(\{%.*?%\}|\{\{.*?\}\}|\s+)')
