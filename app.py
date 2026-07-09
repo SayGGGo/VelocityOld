@@ -83,9 +83,7 @@ def create_user_session(user):
     elif "Android" in user_agent_str: device = "Android"
     elif "Linux" in user_agent_str: device = "Linux (ПК)"
                 
-    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if ip and ',' in ip:
-        ip = ip.split(',')[0].strip()
+    ip = get_client_ip()
                                                  
     try:
         UserSession.query.filter_by(user_id=user.id).filter(UserSession.created_at < datetime.utcnow() - timedelta(days=30)).delete()
@@ -397,8 +395,11 @@ login_manager.login_message_category = "error"
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 mail = Mail(app)
+def get_client_ip():
+    return request.headers.get('CF-Connecting-IP', request.headers.get('X-Forwarded-For', request.remote_addr)).split(',')[0].strip()
+
 limiter = Limiter(
-    get_remote_address,
+    get_client_ip,
     app=app,
     default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://"
@@ -508,70 +509,12 @@ def add_header(response):
 
 def inject_security():
     def get_anti_phishing_js():
-        allowed_env = os.environ.get('ALLOWED_DOMAINS', '')
-        allowed_list = [d.strip() for d in allowed_env.split(',') if d.strip()]
-        for default_domain in ['isvelocity.ru', 'isvelo.city', 'localhost', '127.0.0.1']:
-            if default_domain not in allowed_list:
-                allowed_list.append(default_domain)
-        js_allowed_array = ", ".join(f"'{d}'" for d in allowed_list)
-
-        raw_js = """
-        const h = window.location.hostname;
-        const a = [ALLOW_LIST_PLACEHOLDER];
-        window.mirrorName = "НЕОФИЦИАЛЬНОЕ ЗЕРКАЛО";
-        if (h === 'isvelocity.ru') window.mirrorName = "РОССИЙСКАЯ ВЕРСИЯ";
-        else if (h === 'isvelo.city') window.mirrorName = "ГЛОБАЛЬНАЯ ВЕРСИЯ";
-        else if (h === 'localhost' || h === '127.0.0.1') window.mirrorName = "ЛОКАЛЬНЫЙ СЕРВЕР";
-        
+        return """
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = '/static/build/styles.css?v=' + new Date().getTime();
         document.head.appendChild(link);
-
-        if (a.length > 0 && !a.includes(h)) { 
-            document.addEventListener("DOMContentLoaded", () => { 
-                const w = document.createElement('div');
-                w.style = "position:fixed;top:0;left:0;width:100%;height:100vh;background:#220000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;font-size:20px;font-weight:400;letter-spacing:1px;text-align:center;padding:20px;";
-                w.innerHTML = "<div style='font-size:60px;margin-bottom:20px;'>⚠️</div><div style='color:#fff;margin-bottom:10px;'>ВНИМАНИЕ</div><div style='font-size:14px;font-weight:400;max-width:600px;color:#ccc;'>Вы находитесь на неофициальном зеркале: <b>" + h + "</b>.</div><div style='margin-top:20px;font-size:12px;color:#888;'>Будьте осторожны.</div><button onclick='this.parentElement.remove(); document.body.style.overflow=&quot;auto&quot;;' style='margin-top:20px;background:#fff;color:#000;border:none;padding:10px 20px;border-radius:20px;cursor:pointer;font-weight:bold;'>ПРОДОЛЖИТЬ</button>";
-                document.body.appendChild(w);
-                document.body.style.overflow = "hidden";
-            } );
-        }
         """
-        raw_js = raw_js.replace("[ALLOW_LIST_PLACEHOLDER]", f"[{js_allowed_array}]")
-        
-        import base64
-        key = random.randint(10, 250)
-        raw_bytes = raw_js.encode('utf-8')
-        xor_bytes = bytes([b ^ key for b in raw_bytes])
-        b64_payload = base64.b64encode(xor_bytes).decode('utf-8')
-        
-        var_b64 = "b" + "".join(random.choices(string.ascii_letters, k=6))
-        var_bin = "n" + "".join(random.choices(string.ascii_letters, k=6))
-        var_arr = "a" + "".join(random.choices(string.ascii_letters, k=6))
-        var_str = "s" + "".join(random.choices(string.ascii_letters, k=6))
-        var_key = "k" + "".join(random.choices(string.ascii_letters, k=6))
-        var_func = "f" + "".join(random.choices(string.ascii_letters, k=6))
-        
-        script = f"""
-        (function(){{
-            try {{
-                var {var_b64} = "{b64_payload}";
-                var {var_key} = {key};
-                var {var_bin} = atob({var_b64});
-                var {var_arr} = new Uint8Array({var_bin}.length);
-                for(var i=0; i<{var_bin}.length; i++){{ 
-                    {var_arr}[i] = {var_bin}.charCodeAt(i) ^ {var_key};
-                }} 
-                var {var_str} = new TextDecoder().decode({var_arr});
-                var {var_func} = new Function({var_str});
-                {var_func}();
-            }} catch(e) {{
-                console.error("Anti-phishing failed to execute. Contact support.", e);
-            }}
-        }})();
-        """
-        return script
     return dict(
         anti_phishing=get_anti_phishing_js,
         YANDEX_CAPTCHA_CLIENT_KEY=os.environ.get('YANDEX_CAPTCHA_CLIENT_KEY', 'ysc1_iuWrKlKmg8h9p5oF2nxnboXBxT1ZqUoeZgXHIJgy83208734')
@@ -587,7 +530,7 @@ def verify_smartcaptcha(token):
         resp = requests.post('https://smartcaptcha.yandexcloud.net/validate', data={
             'secret': secret,
             'token': token,
-            'ip': request.remote_addr
+            'ip': get_client_ip()
         }, timeout=10)
         if resp.ok:
             return resp.json().get('status') == 'ok'
