@@ -499,9 +499,16 @@ def inject_security():
         if os.path.exists('static/build/styles.css'):
             with open('static/build/styles.css', 'r', encoding='utf-8') as f:
                 css_content = f.read().replace('\\', '\\\\').replace('`', '\\`')
+        allowed_env = os.environ.get('ALLOWED_DOMAINS', '')
+        allowed_list = [d.strip() for d in allowed_env.split(',') if d.strip()]
+        for default_domain in ['isvelocity.ru', 'isvelo.city', 'localhost', '127.0.0.1']:
+            if default_domain not in allowed_list:
+                allowed_list.append(default_domain)
+        js_allowed_array = ", ".join(f"'{d}'" for d in allowed_list)
+
         raw_js = """
         const h = window.location.hostname;
-        const a = ['isvelocity.ru', 'isvelo.city', 'localhost', '127.0.0.1'];
+        const a = [ALLOW_LIST_PLACEHOLDER];
         window.mirrorName = "НЕОФИЦИАЛЬНОЕ ЗЕРКАЛО";
         if (h === 'isvelocity.ru') window.mirrorName = "РОССИЙСКАЯ ВЕРСИЯ";
         else if (h === 'isvelo.city') window.mirrorName = "ГЛОБАЛЬНАЯ ВЕРСИЯ";
@@ -530,6 +537,7 @@ def inject_security():
             document.head.appendChild(style);
         } 
         """
+        raw_js = raw_js.replace("[ALLOW_LIST_PLACEHOLDER]", f"[{js_allowed_array}]")
         key = random.randint(10, 250)
         encoded = [(ord(c) ^ key) for c in raw_js]
         var_array = "a" + "".join(random.choices(string.ascii_letters, k=6))
