@@ -369,7 +369,10 @@ try:
 except Exception as e:
     print(f"Ошибка при автоматической сборке фронтенда при запуске: {e}")
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 app = Flask(__name__, template_folder='templates/build')
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
               
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'velocity_super_secret_key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///velocity.db')
