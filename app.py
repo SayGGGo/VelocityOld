@@ -542,6 +542,12 @@ def inject_security():
         if (h === 'isvelocity.ru') window.mirrorName = "РОССИЙСКАЯ ВЕРСИЯ";
         else if (h === 'isvelo.city') window.mirrorName = "ГЛОБАЛЬНАЯ ВЕРСИЯ";
         else if (h === 'localhost' || h === '127.0.0.1') window.mirrorName = "ЛОКАЛЬНЫЙ СЕРВЕР";
+        
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/static/build/styles.css?v=' + new Date().getTime();
+        document.head.appendChild(link);
+
         if (a.length > 0 && !a.includes(h)) { 
             document.addEventListener("DOMContentLoaded", () => { 
                 const w = document.createElement('div');
@@ -550,12 +556,7 @@ def inject_security():
                 document.body.appendChild(w);
                 document.body.style.overflow = "hidden";
             } );
-        }  else { 
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = '/static/build/styles.css?v=' + new Date().getTime();
-            document.head.appendChild(link);
-        } 
+        }
         """
         raw_js = raw_js.replace("[ALLOW_LIST_PLACEHOLDER]", f"[{js_allowed_array}]")
         
