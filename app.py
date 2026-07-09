@@ -541,21 +541,31 @@ def inject_security():
         } 
         """
         raw_js = raw_js.replace("[ALLOW_LIST_PLACEHOLDER]", f"[{js_allowed_array}]").replace("{css_content}", css_content)
+        
+        import base64
         key = random.randint(10, 250)
-        encoded = [(ord(c) ^ key) for c in raw_js]
-        var_array = "a" + "".join(random.choices(string.ascii_letters, k=6))
-        var_key = "k" + "".join(random.choices(string.ascii_letters, k=6))
+        raw_bytes = raw_js.encode('utf-8')
+        xor_bytes = bytes([b ^ key for b in raw_bytes])
+        b64_payload = base64.b64encode(xor_bytes).decode('utf-8')
+        
+        var_b64 = "b" + "".join(random.choices(string.ascii_letters, k=6))
+        var_bin = "n" + "".join(random.choices(string.ascii_letters, k=6))
+        var_arr = "a" + "".join(random.choices(string.ascii_letters, k=6))
         var_str = "s" + "".join(random.choices(string.ascii_letters, k=6))
+        var_key = "k" + "".join(random.choices(string.ascii_letters, k=6))
         var_func = "f" + "".join(random.choices(string.ascii_letters, k=6))
+        
         script = f"""
         (function(){{
             try {{
-                var {var_array} = {encoded};
+                var {var_b64} = "{b64_payload}";
                 var {var_key} = {key};
-                var {var_str} = '';
-                for(var i=0; i<{var_array}.length; i++){{ 
-                    {var_str} += String.fromCodePoint({var_array}[i] ^ {var_key});
+                var {var_bin} = atob({var_b64});
+                var {var_arr} = new Uint8Array({var_bin}.length);
+                for(var i=0; i<{var_bin}.length; i++){{ 
+                    {var_arr}[i] = {var_bin}.charCodeAt(i) ^ {var_key};
                 }} 
+                var {var_str} = new TextDecoder().decode({var_arr});
                 var {var_func} = new Function({var_str});
                 {var_func}();
             }} catch(e) {{
