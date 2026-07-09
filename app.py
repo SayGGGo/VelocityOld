@@ -361,6 +361,14 @@ def get_latest_mtime():
             if file.endswith('.html'):
                 latest = max(latest, os.path.getmtime(os.path.join(root, file)))
     return latest
+
+# Инициализация сборки фронтенда при запуске приложения
+try:
+    build_obfuscated()
+    LAST_BUILD_TIME = get_latest_mtime()
+except Exception as e:
+    print(f"Ошибка при автоматической сборке фронтенда при запуске: {e}")
+
 app = Flask(__name__, template_folder='templates/build')
               
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'velocity_super_secret_key')
