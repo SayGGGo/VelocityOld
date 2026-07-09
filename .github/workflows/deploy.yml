@@ -33,8 +33,8 @@ jobs:
           script: |
             cd /root/velocity
             git pull origin main
-            pkill -f "[p]ython app.py" || true
-            nohup python app.py > app.log 2>&1 &
+            pkill -f "[p]ython3 app.py" || true
+            nohup python3 app.py > app.log 2>&1 &
             sleep 1
 
       - name: ※ Successful | ЦТК.SPACE
