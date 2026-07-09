@@ -542,12 +542,11 @@ def inject_security():
         if (h === 'isvelocity.ru') window.mirrorName = "РОССИЙСКАЯ ВЕРСИЯ";
         else if (h === 'isvelo.city') window.mirrorName = "ГЛОБАЛЬНАЯ ВЕРСИЯ";
         else if (h === 'localhost' || h === '127.0.0.1') window.mirrorName = "ЛОКАЛЬНЫЙ СЕРВЕР";
-        if (!a.includes(h)) { 
+        if (a.length > 0 && !a.includes(h)) { 
             document.addEventListener("DOMContentLoaded", () => { 
                 const w = document.createElement('div');
-                w.style = "position:fixed;top:0;left:0;width:100%;height:100vh;background:#990000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;font-size:24px;font-weight:900;letter-spacing:2px;text-align:center;padding:20px;";
-                w.innerHTML = "<div style='font-size:80px;margin-bottom:20px;'>🛑</div><div style='color:#fff;margin-bottom:10px;'>СИСТЕМА ЗАЩИТЫ VELOCITY</div><div style='font-size:16px;font-weight:400;max-width:800px;color:#eee;'>Ваш текущий домен <b>" + h + "</b> не разрешен для использования.</div><div style='margin-top:20px;font-size:14px;color:#fff;'>Пожалуйста, добавьте этот домен в переменную <b>ALLOWED_DOMAINS</b> в файле <b>.env</b>!</div>";
-                document.body.innerHTML = "";
+                w.style = "position:fixed;top:0;left:0;width:100%;height:100vh;background:#220000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;font-size:20px;font-weight:400;letter-spacing:1px;text-align:center;padding:20px;";
+                w.innerHTML = "<div style='font-size:60px;margin-bottom:20px;'>⚠️</div><div style='color:#fff;margin-bottom:10px;'>ВНИМАНИЕ</div><div style='font-size:14px;font-weight:400;max-width:600px;color:#ccc;'>Вы находитесь на неофициальном зеркале: <b>" + h + "</b>.</div><div style='margin-top:20px;font-size:12px;color:#888;'>Будьте осторожны.</div><button onclick='this.parentElement.remove(); document.body.style.overflow=\"auto\";' style='margin-top:20px;background:#fff;color:#000;border:none;padding:10px 20px;border-radius:20px;cursor:pointer;font-weight:bold;'>ПРОДОЛЖИТЬ</button>";
                 document.body.appendChild(w);
                 document.body.style.overflow = "hidden";
             } );
