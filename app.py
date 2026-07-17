@@ -16,7 +16,7 @@ from flask_mail import Mail, Message
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from authlib.integrations.flask_client import OAuth
-from models import db, User, UserSession, UserEmail, UserPasskey, Payment, Transaction, Organization, PRO_ENTRY_PRICE, PRO_BONUS_TOKENS
+from models import db, User, UserSession, UserEmail, UserPasskey, Payment, Transaction, Organization, Course, CourseProgress, PRO_ENTRY_PRICE, PRO_BONUS_TOKENS
                               
 from dotenv import load_dotenv
 load_dotenv()
@@ -142,6 +142,31 @@ def build_obfuscated():
         'modal-overlay', 'modal-box', 'modal-title', 'modal-close', 'open',
                         
         'input-group', 'btn-save', 'dh-balance', 'dh-sub',
+        'editor-layout', 'sidebar-modules', 'sidebar-header', 'sidebar-scrollable',
+        'module-item', 'active-module', 'module-header', 'module-title', 'lessons-list',
+        'lesson-btn', 'control-work', 'main-workspace', 'workspace-header', 'workspace-content',
+        'mode-switch', 'mode-btn', 'sidebar-actions', 'btn-action', 'btn-primary', 'btn-secondary',
+        'creator-item-box', 'creator-item-header', 'creator-item-type', 'type-picker-overlay',
+        'type-picker-card', 'picker-left', 'picker-right', 'picker-categories', 'picker-cat-title',
+        'picker-option', 'picker-option-label', 'demo-title', 'demo-desc', 'demo-screen-box',
+        'student-item-card', 'typing-box', 'typing-char', 'matching-game-grid', 'matching-col',
+        'matching-card', 'path-buttons-container', 'path-line', 'path-dot', 'path-detail-panel',
+        'upload-spinner', 'active-lesson', 'clicked', 'correct', 'incorrect', 'current',
+        'matched', 'course-accordion-container', 'course-acc-card', 'main-course',
+        'small-course', 'locked-course', 'lock-indicator', 'card-full-info', 'category-badge',
+        'course-card-title', 'course-card-meta', 'start-btn', 'card-short-info', 'short-title',
+        'flow-modal-overlay', 'flow-modal-card', 'close-modal-btn', 'flow-screen', 'flow-title',
+        'flow-desc', 'tiles-grid', 'tile-btn', 'tile-btn-wide', 'flow-back-btn', 'banner-dropzone',
+        'banner-dropzone-inner', 'form-group', 'create-submit-btn', 'rules-agreement-label',
+        'rules-container', 'company-cards-grid', 'company-card', 'company-avatar',
+        'company-avatar-placeholder', 'company-info', 'company-name', 'company-type', 'toast-container',
+        'custom-control', 'checkmark-radio', 'checkmark-box', 'control-label-text', 'CodeMirror', 'CodeMirror-focused', 'cm-s-material-darker',
+
+        # Modal system classes — referenced by literal name in static/js/velocity-ui.js
+        # (querySelector('.auth-btn') / querySelector('.vel-modal-close')). Must NOT be
+        # obfuscated or the alert/confirm popup OK and close buttons stop working.
+        'vel-modal-overlay', 'vel-modal-card', 'vel-modal-close', 'auth-btn',
+        'btn-pay-ready', 'btn-pay-disabled'
     }
     classes = set()
     html_files = []
@@ -856,11 +881,17 @@ def api_register():
 def lk_redirect():
     return redirect(url_for('dashboard'))
 
+def ensure_default_courses(user_id):
+    pass
+
 @app.route('/lk/dashboard')
 @login_required
-
 def dashboard():
-    return render_template('dashboard.html')
+    from models import COURSE_CATEGORIES, Organization
+    ensure_default_courses(current_user.id)
+    courses = Course.query.filter_by(author_id=current_user.id).order_by(Course.id.desc()).all()
+    user_organizations = Organization.query.filter_by(owner_id=current_user.id).all()
+    return render_template('dashboard.html', courses=courses, categories=COURSE_CATEGORIES, user_organizations=user_organizations)
 
 @app.route('/lk/profile')
 @login_required
@@ -1169,6 +1200,333 @@ def logout():
     logout_user()
     session.clear()
     return redirect(url_for('index'))
+
+@app.route('/lk/course_editor/<int:course_id>')
+@login_required
+def course_editor_legacy(course_id):
+    return redirect(url_for('course_editor', course_id=course_id))
+
+@app.route('/lk/course-editor/<int:course_id>')
+@login_required
+def course_editor(course_id):
+    course = Course.query.get_or_404(course_id)
+    if course.author_id != current_user.id:
+        return redirect(url_for('dashboard'))
+    return render_template('course_editor.html', course=course)
+
+@app.route('/api/courses/create', methods=['POST'])
+@login_required
+def create_course():
+    import json
+    data = request.json or {}
+    title = data.get('title', '').strip()
+    banner = data.get('banner', '').strip()
+    category = data.get('category', '').strip()
+    company = data.get('company', '').strip()
+    agreement_accepted = data.get('agreement_accepted', False)
+
+    if not title:
+        return jsonify({'success': False, 'error': 'Название курса обязательно'})
+    if not category:
+        return jsonify({'success': False, 'error': 'Категория обязательна'})
+    if not agreement_accepted:
+        return jsonify({'success': False, 'error': 'Необходимо согласиться с правилами'})
+
+    if not banner:
+        banner = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60"
+
+    default_structure = [
+        {
+            "id": "module_0",
+            "title": "Модуль 0: Информация о курсе",
+            "lessons": [
+                {
+                    "id": "lesson_0_1",
+                    "title": "0.1 - Информация о курсе",
+                    "is_control": False,
+                    "items": [
+                        {
+                            "id": "item_0_1_1",
+                            "type": "theory_markdown",
+                            "title": "Информация о курсе",
+                            "markdown": "# Новый урок\n\nВведите или замените этот текст вашей информацией о курсе."
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+
+    new_course = Course(
+        author_id=current_user.id,
+        title=title,
+        banner=banner,
+        category=category,
+        company=company or current_user.display_name,
+        agreement_accepted=True,
+        structure_json=json.dumps(default_structure)
+    )
+
+    db.session.add(new_course)
+    db.session.commit()
+
+    return jsonify({'success': True, 'course_id': new_course.id})
+
+@app.route('/api/courses/<int:course_id>', methods=['GET', 'POST'])
+@login_required
+def api_course_detail(course_id):
+    import json
+    course = Course.query.get_or_404(course_id)
+    if course.author_id != current_user.id:
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    if request.method == 'POST':
+        data = request.json or {}
+        if 'title' in data:
+            course.title = data['title']
+        if 'banner' in data:
+            course.banner = data['banner']
+        if 'category' in data:
+            course.category = data['category']
+        if 'company' in data:
+            course.company = data['company']
+        if 'structure' in data:
+            course.structure_json = json.dumps(data['structure'])
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    
+    try:
+        structure = json.loads(course.structure_json)
+    except:
+        structure = []
+    
+    return jsonify({
+        'id': course.id,
+        'title': course.title,
+        'banner': course.banner,
+        'category': course.category,
+        'company': course.company,
+        'structure': structure
+    })
+
+@app.route('/api/courses/delete/<int:course_id>', methods=['POST'])
+@login_required
+def delete_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    if course.author_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+    CourseProgress.query.filter_by(course_id=course_id).delete()
+    db.session.delete(course)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/courses/check-answer', methods=['POST'])
+@login_required
+def check_course_answer():
+    import json
+    data = request.json
+    course_id = data.get('course_id')
+    item_id = data.get('item_id')
+    answer = data.get('answer') # For multi, it's a list. For single, a string.
+
+    course = db.session.get(Course, course_id)
+    if not course:
+        return jsonify({'error': 'Course not found'}), 404
+        
+    structure = json.loads(course.structure_json)
+    
+    # Find the item
+    target_item = None
+    for mod in structure:
+        for lesson in mod.get('lessons', []):
+            for item in lesson.get('items', []):
+                if item.get('id') == item_id:
+                    target_item = item
+                    break
+            if target_item: break
+        if target_item: break
+
+    if not target_item:
+        return jsonify({'error': 'Item not found'}), 404
+
+    is_correct = False
+    item_type = target_item.get('type')
+    correct_ans = target_item.get('correct')
+
+    if item_type == 'task_test_single':
+        if str(correct_ans).strip() == '*':
+            is_correct = True
+        else:
+            is_correct = (str(answer).strip() == str(correct_ans).strip())
+    elif item_type == 'task_test_multi':
+        if isinstance(correct_ans, str):
+            try:
+                correct_ans = json.loads(correct_ans)
+            except:
+                correct_ans = [correct_ans]
+        if isinstance(answer, list) and isinstance(correct_ans, list):
+            # Use sets to ignore order, but check lengths to ensure exact match if duplicates exist
+            is_correct = (len(answer) == len(correct_ans) and set(answer) == set(correct_ans))
+    elif item_type in ['task_input_int', 'task_input_float']:
+        correct_list = [s.strip().lower() for s in str(correct_ans).split(',')]
+        ans_str = str(answer).strip().lower()
+        if item_type == 'task_input_float':
+            ans_str = ans_str.replace(',', '.')
+            correct_list = [c.replace(',', '.') for c in correct_list]
+        is_correct = (ans_str in correct_list) or ('*' in correct_list)
+    elif item_type and item_type.startswith('task_input_'):
+        correct_list = [s.strip().lower() for s in str(correct_ans).split(',')]
+        ans_str = str(answer).strip().lower()
+        is_correct = (ans_str in correct_list) or ('*' in correct_list)
+
+    return jsonify({'correct': is_correct})
+
+@app.route('/api/courses/run-code', methods=['POST'])
+@login_required
+def api_run_code():
+    import requests
+    data = request.json or {}
+    student_code = data.get('student_code', '')
+    test_type = data.get('test_type', 'simple')
+    language = data.get('language', 'python')
+
+    lang_config = {
+        "python": {"url": "python", "file": "student.py", "main": "main.py"},
+        "cpp": {"url": "cpp", "file": "student.cpp", "main": "main.cpp"},
+        "csharp": {"url": "csharp", "file": "student.cs", "main": "main.cs"},
+        "java": {"url": "java", "file": "Student.java", "main": "Main.java"}
+    }
+    config = lang_config.get(language, lang_config['python'])
+
+    if test_type == 'run_only':
+        try:
+            url = f"https://glot.io/api/run/{config['url']}/latest"
+            headers = {
+                "Authorization": "Token b1318173-1b9f-41a6-aca7-794187482db2",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "stdin": data.get('stdin', ''),
+                "files": [
+                    {
+                        "name": "main.py" if language == "python" else config["main"],
+                        "content": student_code
+                    }
+                ]
+            }
+            resp = requests.post(url, json=payload, headers=headers)
+            if resp.ok:
+                return jsonify(resp.json())
+            else:
+                return jsonify({"error": f"Glot API error: {resp.text}"}), 500
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    elif test_type == 'simple':
+        test_cases = data.get('test_cases', [])
+        results = []
+        for i, test in enumerate(test_cases, 1):
+            stdin = test.get("stdin", "")
+            expected = test.get("expected", "").strip()
+            is_hidden = test.get("is_hidden", False)
+
+            try:
+                url = f"https://glot.io/api/run/{config['url']}/latest"
+                headers = {
+                    "Authorization": "Token b1318173-1b9f-41a6-aca7-794187482db2",
+                    "Content-Type": "application/json"
+                }
+                payload = {
+                    "stdin": stdin,
+                    "files": [
+                        {
+                            "name": "main.py" if language == "python" else config["main"],
+                            "content": student_code
+                        }
+                    ]
+                }
+                resp = requests.post(url, json=payload, headers=headers)
+                if resp.ok:
+                    res_json = resp.json()
+                    stdout = res_json.get("stdout", "").strip()
+                    stderr = res_json.get("stderr", "").strip()
+                    error = res_json.get("error", "").strip()
+
+                    res_obj = {"test_num": i, "is_hidden": is_hidden}
+                    
+                    if not is_hidden:
+                        res_obj["stdin"] = stdin
+                        res_obj["expected"] = expected
+                        res_obj["stdout"] = stdout
+
+                    if stderr:
+                        res_obj["status"] = "fail"
+                        if not is_hidden: res_obj["message"] = f"Runtime error:\n{stderr}"
+                        results.append(res_obj)
+                    elif error:
+                        res_obj["status"] = "error"
+                        if not is_hidden: res_obj["message"] = error
+                        results.append(res_obj)
+                    elif stdout == expected:
+                        res_obj["status"] = "pass"
+                        results.append(res_obj)
+                    else:
+                        res_obj["status"] = "fail"
+                        if not is_hidden: res_obj["message"] = f"Ожидалось: '{expected}', получено: '{stdout}'"
+                        results.append(res_obj)
+                else:
+                    results.append({"test_num": i, "status": "error", "message": f"Glot API error: {resp.status_code}", "is_hidden": is_hidden})
+            except Exception as e:
+                results.append({"test_num": i, "status": "error", "message": str(e), "is_hidden": is_hidden})
+        return jsonify({"success": True, "results": results})
+
+    elif test_type == 'complex':
+        checker_script = data.get('checker_script', '')
+        try:
+            url = "https://glot.io/api/run/python/latest"
+            headers = {
+                "Authorization": "Token b1318173-1b9f-41a6-aca7-794187482db2",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "stdin": "",
+                "files": [
+                    {
+                        "name": "student.py",
+                        "content": student_code
+                    },
+                    {
+                        "name": "main.py",
+                        "content": checker_script
+                    }
+                ]
+            }
+            resp = requests.post(url, json=payload, headers=headers)
+            if resp.ok:
+                res_json = resp.json()
+                stdout = res_json.get("stdout", "").strip()
+                stderr = res_json.get("stderr", "").strip()
+                error = res_json.get("error", "").strip()
+
+                if stderr:
+                    return jsonify({"success": False, "status": "fail", "message": stderr})
+                elif error:
+                    return jsonify({"success": False, "status": "error", "message": error})
+                else:
+                    is_passed = "SUCCESS" in stdout
+                    return jsonify({
+                        "success": True,
+                        "passed": is_passed,
+                        "stdout": stdout,
+                        "message": stdout if not is_passed else "Все проверки успешно пройдены!"
+                    })
+            else:
+                return jsonify({"success": False, "status": "error", "message": f"Glot API error: {resp.text}"})
+        except Exception as e:
+            return jsonify({"success": False, "status": "error", "message": str(e)})
+
+    return jsonify({"error": "Неизвестный тип теста"}), 400
 
 @app.route('/')
 

@@ -173,3 +173,31 @@ class Transaction(db.Model):
 
     user = db.relationship('User', backref=db.backref('transactions', lazy=True))
     payment = db.relationship('Payment', backref=db.backref('transactions', lazy=True))
+
+
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    title = db.Column(db.String(150), nullable=False)
+    banner = db.Column(db.String(500), nullable=True)
+    category = db.Column(db.String(100), nullable=True)
+    company = db.Column(db.String(150), nullable=True)
+    agreement_accepted = db.Column(db.Boolean, default=False)
+    structure_json = db.Column(db.Text, default='[]') # Holds JSON representation of course modules, lessons, tasks
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+    author = db.relationship('User', backref=db.backref('courses_created', lazy=True))
+
+
+class CourseProgress(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id', ondelete='CASCADE'), nullable=False)
+    completed_lessons = db.Column(db.Text, default='[]') # JSON list of lesson IDs
+    completed_tasks = db.Column(db.Text, default='{}') # JSON dict of task IDs to their status/score
+    last_active_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+    user = db.relationship('User', backref=db.backref('course_progresses', lazy=True))
+    course = db.relationship('Course', backref=db.backref('progresses', lazy=True))
+

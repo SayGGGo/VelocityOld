@@ -180,6 +180,9 @@
         }
     };
 
+    const nativeAlert = window.alert ? window.alert.bind(window) : null;
+    const nativeConfirm = window.confirm ? window.confirm.bind(window) : null;
+
     VelocityUI.alert = function (msg) {
         return new Promise((resolve) => {
             const modal = document.getElementById('vel-alert-modal');
@@ -196,7 +199,7 @@
                 if (okBtn) okBtn.onclick = handler;
                 VelocityUI.openModal('vel-alert-modal');
             } else {
-                window.alert(msg);
+                (nativeAlert || function () {})(msg);
                 resolve();
             }
         });
@@ -226,7 +229,7 @@
                 if (okBtn) okBtn.onclick = onOk;
                 VelocityUI.openModal('vel-confirm-modal');
             } else {
-                resolve(window.confirm(msg));
+                resolve((nativeConfirm || function () { return false; })(msg));
             }
         });
     };
